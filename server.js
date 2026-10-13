@@ -1,9 +1,4 @@
-// ============================================
-// server.js - Smart Hybrid Library System
-// Express + Socket.io entry point
-// ============================================
 
-// Triggering restart...
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
@@ -38,11 +33,12 @@ const httpServer = createServer(app);
 // ── Socket.io Setup ──────────────────────────────────────────────────────────
 const io = new Server(httpServer, {
   cors: {
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      process.env.CLIENT_URL,
-    ].filter(Boolean),
+     origin: [
+    "https://smart-hybrid-library.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    process.env.CLIENT_URL,
+  ].filter(Boolean),
     methods: ["GET", "POST"],
   },
 });
@@ -70,9 +66,11 @@ io.on("connection", (socket) => {
 
 
 // ── Middleware ────────────────────────────────────────────────────────────────
+
 app.use(
   cors({
     origin: [
+      "https://smart-hybrid-library.vercel.app",
       "http://localhost:5173",
       "http://localhost:5174",
       process.env.CLIENT_URL,
@@ -80,6 +78,7 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
@@ -128,22 +127,50 @@ app.use((err, _req, res, _next) => {
 
 
 
-// ── DB + Start ────────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 5000;
 
-const start = async () => {
-  try {
-    await configureDB();
-    httpServer.listen(PORT, () => {
-      console.log(`\n🚀 HTTP  server → http://localhost:${PORT}`);
-      console.log(`📚 Smart Library API ready!\n`);
-      // Start background tasks
-      setupCronJobs();
+
+let dbPromise;
+
+const connectDB = async () => {
+  if (!dbPromise) {
+    dbPromise = configureDB().catch((err) => {
+      dbPromise = null;
+      throw err;
     });
-  } catch (e) {
-    console.error("Failed to start server:", e);
-    process.exit(1);
   }
+  return dbPromise;
 };
 
-start();
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("Database connection failed:", err.message);
+    res.status(503).json({
+      success: false,
+      message: "Database connection failed",
+    });
+  }
+});
+
+export default app;
+
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
+
+  const start = async () => {
+    try {
+      await connectDB();
+      httpServer.listen(PORT, () => {
+        console.log(`Smart Library API running on port ${PORT}`);
+        setupCronJobs();
+      });
+    } catch (err) {
+      console.error("Failed to start server:", err);
+      process.exit(1);
+    }
+  };
+
+  start();
+}
