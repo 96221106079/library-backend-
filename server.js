@@ -34,9 +34,10 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
      origin: [
-    "https://smart-hybrid-library.vercel.app",
-    "http://localhost:5173",
-    "http://localhost:5174",
+  "https://smart-hybrid-library.vercel.app",
+  "https://smart-hybrid-library-iu1n5n9yn-project-52c1.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:5174",
     process.env.CLIENT_URL,
   ].filter(Boolean),
     methods: ["GET", "POST"],
@@ -70,9 +71,10 @@ io.on("connection", (socket) => {
 app.use(
   cors({
     origin: [
-      "https://smart-hybrid-library.vercel.app",
-      "http://localhost:5173",
-      "http://localhost:5174",
+  "https://smart-hybrid-library.vercel.app",
+  "https://smart-hybrid-library-iu1n5n9yn-project-52c1.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:5174",
       process.env.CLIENT_URL,
     ].filter(Boolean),
     credentials: true,
