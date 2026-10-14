@@ -81,9 +81,37 @@ app.use(
   })
 );
 
+
+
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
+let dbPromise;
+
+const connectDB = async () => {
+  if (!dbPromise) {
+    dbPromise = configureDB().catch((err) => {
+      dbPromise = null;
+      throw err;
+    });
+  }
+  return dbPromise;
+};
+
+
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("Database connection failed:", err.message);
+    res.status(503).json({
+      success: false,
+      message: "Database connection failed",
+    });
+  }
+});
 // ── REST Routes ───────────────────────────────────────────────────────────────
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -129,32 +157,6 @@ app.use((err, _req, res, _next) => {
 
 
 
-
-
-let dbPromise;
-
-const connectDB = async () => {
-  if (!dbPromise) {
-    dbPromise = configureDB().catch((err) => {
-      dbPromise = null;
-      throw err;
-    });
-  }
-  return dbPromise;
-};
-
-app.use(async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (err) {
-    console.error("Database connection failed:", err.message);
-    res.status(503).json({
-      success: false,
-      message: "Database connection failed",
-    });
-  }
-});
 
 export default app;
 
