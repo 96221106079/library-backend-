@@ -1,14 +1,22 @@
 import mongoose from "mongoose";
+
 const configureDB = async () => {
   try {
-    const db = await mongoose.connect(
-      process.env.MONGO_URI || "mongodb://127.0.0.1:27017/libraryDB"
-    );
-    console.log(`connected to MongoDb ${db.connection.host}`);
+    const mongoUri = process.env.MONGO_URI;
+
+    if (!mongoUri) {
+      throw new Error("MONGO_URI environment variable is missing");
+    }
+
+    const db = await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 10000,
+    });
+
+    console.log(`Connected to MongoDB: ${db.connection.host}`);
     return db;
   } catch (err) {
-    console.error(`MongoDb Connection Failed : ${err.message}`);
-    process.exit(1);
+    console.error("MongoDB connection failed:", err.message);
+    throw err;
   }
 };
 
